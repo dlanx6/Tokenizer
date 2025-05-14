@@ -40,4 +40,6 @@ jobs:
       - name: Run Forge tests
         run: |
           forge test -vvv
+        env: 
+          OWNER_ADDRESS: ${{ secrets.OWNER_ADDRESS }}
         id: test
