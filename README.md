@@ -3,7 +3,7 @@
 **A Solidity smart contract for minting and verifying transcript hash with token ID.**\
 
 > [!NOTE]  
->Deployed on zkSync, a Layer-2 scaling solution for Ethereum
+> Deployed on zkSync, a Layer-2 scaling solution for Ethereum
 
 ---
 
