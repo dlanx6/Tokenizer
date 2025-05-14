@@ -2,19 +2,24 @@
 pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
-import {Tokenizer, Tokenizer__NotAuthorized, Tokenizer__TokenAlreadyMinted, Tokenizer__TokenNotMinted, Tokenizer__InvalidHash} from "../src/Tokenizer.sol";
+import {
+    Tokenizer,
+    Tokenizer__NotAuthorized,
+    Tokenizer__TokenAlreadyMinted,
+    Tokenizer__TokenNotMinted,
+    Tokenizer__InvalidHash
+} from "../src/Tokenizer.sol";
 import {DeployTokenizer} from "../script/DeployTokenizer.s.sol";
 import {ZkSyncChainChecker} from "foundry-devops/src/ZkSyncChainChecker.sol";
 
-
 contract TokenizerTest is Test, ZkSyncChainChecker {
-	Tokenizer tokenizer;
+    Tokenizer tokenizer;
 
     uint256 constant TOKENID = 1234;
     bytes32 constant HASH = 0x7c1d39220cfc66b0a8e2357e1a2ff4143c3e560dbdcaa539f6a6d1e9c6cbaf52;
     address immutable OWNER = vm.envAddress("OWNER_ADDRESS");
 
-    modifier isOwner {
+    modifier isOwner() {
         vm.prank(OWNER);
         _;
     }
@@ -23,17 +28,16 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         if (!isZkSyncChain()) {
             DeployTokenizer deploy = new DeployTokenizer();
             tokenizer = deploy.run();
+        } else {
+            tokenizer = new Tokenizer(OWNER);
         }
-        else {
-            tokenizer = new Tokenizer(OWNER);  
-        } 
     }
 
-   function testSenderIsOwner() public {
+    function testSenderIsOwner() public {
         vm.expectRevert(Tokenizer__NotAuthorized.selector);
 
         tokenizer.mintTranscript(TOKENID, HASH);
-   }
+    }
 
     function testFirstTimeTokenMinted() public isOwner {
         tokenizer.mintTranscript(TOKENID, HASH);
@@ -67,7 +71,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
 
     function testGettingNotMintedToken() public {
         vm.expectRevert(Tokenizer__TokenNotMinted.selector);
-        
+
         tokenizer.getTranscriptHash(121);
     }
 
@@ -78,4 +82,3 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         assertEq(hashOfToken, HASH);
     }
 }
-
