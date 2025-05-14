@@ -1,7 +1,9 @@
 ## Tokenizer Contract using Foundry
 
 **A Solidity smart contract for minting and verifying transcript hash with token ID.**\
-**Deployed on zkSync, a Layer-2 scaling solution for Ethereum**
+
+> [!NOTE]  
+>Deployed on zkSync, a Layer-2 scaling solution for Ethereum
 
 ---
 
