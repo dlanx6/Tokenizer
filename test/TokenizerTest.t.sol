@@ -4,8 +4,10 @@ pragma solidity ^0.8.19;
 import {Test} from "forge-std/Test.sol";
 import {Tokenizer, Tokenizer__NotAuthorized, Tokenizer__TokenAlreadyMinted, Tokenizer__TokenNotMinted, Tokenizer__InvalidHash} from "../src/Tokenizer.sol";
 import {DeployTokenizer} from "../script/DeployTokenizer.s.sol";
+import {ZkSyncChainChecker} from "lib/foundry-devops/src/ZkSyncChainChecker.sol";
 
-contract TokenizerTest is Test {
+
+contract TokenizerTest is Test, ZkSyncChainChecker {
 	Tokenizer tokenizer;
 
     uint256 constant TOKENID = 1234;
@@ -18,17 +20,22 @@ contract TokenizerTest is Test {
     }
 
     function setUp() external {
-        DeployTokenizer deploy = new DeployTokenizer();
-        tokenizer = deploy.run();
+        if (!isZkSyncChain()) {
+            DeployTokenizer deploy = new DeployTokenizer();
+            tokenizer = deploy.run();
+        }
+        else {
+            tokenizer = new Tokenizer(OWNER);  
+        } 
     }
 
-   function testSenderIsOwner() public {
+   function testSenderIsOwner() public skipZkSync {
         vm.expectRevert(Tokenizer__NotAuthorized.selector);
 
         tokenizer.mintTranscript(TOKENID, HASH);
    }
 
-    function testFirstTimeTokenMinted() public isOwner {
+    function testFirstTimeTokenMinted() public isOwner skipZkSync {
         tokenizer.mintTranscript(TOKENID, HASH);
 
         address ownerOfToken = tokenizer.ownerOf(TOKENID);
@@ -36,7 +43,7 @@ contract TokenizerTest is Test {
         assertEq(ownerOfToken, OWNER);
     }
 
-    function testTokenAlreadyMinted() public {
+    function testTokenAlreadyMinted() public skipZkSync {
         vm.startPrank(OWNER);
 
         tokenizer.mintTranscript(TOKENID, HASH);
@@ -46,25 +53,25 @@ contract TokenizerTest is Test {
         vm.stopPrank();
     }
 
-    function testInvalidHash() public isOwner {
+    function testInvalidHash() public isOwner skipZkSync {
         vm.expectRevert(Tokenizer__InvalidHash.selector);
 
         tokenizer.mintTranscript(TOKENID, bytes32(0));
     }
 
-    function testCorrectTokenMintedCount() public isOwner {
+    function testCorrectTokenMintedCount() public isOwner skipZkSync {
         tokenizer.mintTranscript(TOKENID, HASH);
 
         assertEq(tokenizer.getTokenMintedCount(), 1);
     }
 
-    function testGettingNotMintedToken() public {
+    function testGettingNotMintedToken() public skipZkSync {
         vm.expectRevert(Tokenizer__TokenNotMinted.selector);
         
         tokenizer.getTranscriptHash(121);
     }
 
-    function testGettingMintedToken() public isOwner {
+    function testGettingMintedToken() public isOwner skipZkSync {
         tokenizer.mintTranscript(TOKENID, HASH);
         bytes32 hashOfToken = tokenizer.getTranscriptHash(1234);
 
