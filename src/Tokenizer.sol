@@ -9,6 +9,7 @@ error Tokenizer__TokenAlreadyMinted();
 error Tokenizer__TokenNotMinted();
 error Tokenizer__InvalidHash();
 error Tokenizer__HashAlreadyStored();
+error Tokenizer__InvalidTokenId();
 
 /**
  * @title A minter and verifier for PDF with Keccak256 hash
@@ -24,6 +25,14 @@ contract Tokenizer is ERC721 {
      * @param timestamp represents the current date and time when the token is minted
      */
     event TokenMinted(uint256 indexed tokenId, bytes32 indexed pdfHash, uint256 timestamp);
+
+    /**
+     * @dev This event is triggered when a token is burned
+     * @param tokenId represents an ID from off-chain database
+     * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers.js
+     * @param timestamp represents the current date and time when the token is minted
+     */
+    event TokenBurned(uint256 indexed tokenId, bytes32 indexed pdfHash, uint256 timestamp);
 
     /// @dev Stores the tokenId with the related PDF hash
     /// @notice This simply store the tokenId with the hash, used for verification purposes
@@ -52,11 +61,12 @@ contract Tokenizer is ERC721 {
     }
 
     /**
-     * @dev Mints the tokenId and store the pdfHash with the tokenId as key-value pair
+     * @dev Mints or create a token with tokenId and store the pdfHash with the tokenId as key-value pair
      * @param tokenId represents an ID from off-chain database
      * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
      */
-    function mint(uint256 tokenId, bytes32 pdfHash) public onlyAuthorized {
+    function mint(uint256 tokenId, bytes32 pdfHash) external onlyAuthorized {
+        if (tokenId == 0) revert Tokenizer__InvalidTokenId();
         if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
         if (s_storedHashes[pdfHash]) revert Tokenizer__HashAlreadyStored();
         if (_ownerOf(tokenId) != address(0)) revert Tokenizer__TokenAlreadyMinted();
@@ -67,18 +77,39 @@ contract Tokenizer is ERC721 {
         s_storedHashes[pdfHash] = true;
 
         unchecked {
-            mintedTokenCount += 1;
+            mintedTokenCount++;
         }
 
         emit TokenMinted(tokenId, pdfHash, block.timestamp);
     }
 
     /**
+     * @dev Burns or delete a token based on the tokenId, also deletes the corresponding key-value pair in mappings
+     * @param tokenId represents an ID from off-chain database
+     */
+    function burn(uint256 tokenId) external onlyAuthorized {
+        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
+
+        bytes32 storedHash = s_transcriptHashes[tokenId];
+
+        _burn(tokenId);
+
+        delete s_transcriptHashes[tokenId];
+        delete s_storedHashes[storedHash];
+
+        unchecked {
+            mintedTokenCount--;
+        }
+
+        emit TokenBurned(tokenId, storedHash, block.timestamp);
+    } 
+
+    /**
      * @dev retrives the hash of transcript PDF based on minted token ID
      * @param tokenId represents an ID from off-chain database
      * @return Hash of Transcript PDF
      */
-    function getTranscriptHash(uint256 tokenId) public view returns (bytes32)  {
+    function getTranscriptHash(uint256 tokenId) external view returns (bytes32)  {
         if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
 
         return s_transcriptHashes[tokenId];
@@ -90,7 +121,7 @@ contract Tokenizer is ERC721 {
      * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
      * @return True if the input hash matches the on-chain hash, False if not
      */
-    function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) public view returns (bool) {
+    function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) external view returns (bool) {
         if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
         if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
 
@@ -98,7 +129,7 @@ contract Tokenizer is ERC721 {
     }
 
     /// @return Number of minted tokens
-    function getTokenMintedCount() public view returns (uint256) {
+    function getTokenMintedCount() external view returns (uint256) {
         return mintedTokenCount;
     }
 }
