@@ -102,14 +102,14 @@ contract Tokenizer is ERC721 {
         }
 
         emit TokenBurned(tokenId, storedHash, block.timestamp);
-    } 
+    }
 
     /**
      * @dev retrives the hash of transcript PDF based on minted token ID
      * @param tokenId represents an ID from off-chain database
      * @return Hash of Transcript PDF
      */
-    function getTranscriptHash(uint256 tokenId) external view returns (bytes32)  {
+    function getTranscriptHash(uint256 tokenId) external view returns (bytes32) {
         if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
 
         return s_transcriptHashes[tokenId];
