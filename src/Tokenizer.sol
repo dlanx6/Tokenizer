@@ -105,6 +105,19 @@ contract Tokenizer is ERC721 {
     }
 
     /**
+     * @dev verifies the hash of transcript PDF stored on-chain with PDF hash from the frontend
+     * @param tokenId represents an ID from off-chain database
+     * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
+     * @return True if the input hash matches the on-chain hash, False if not
+     */
+    function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) external view returns (bool) {
+        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
+        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
+
+        return pdfHash == s_transcriptHashes[tokenId];
+    }
+
+    /**
      * @dev retrives the hash of transcript PDF based on minted token ID
      * @param tokenId represents an ID from off-chain database
      * @return Hash of Transcript PDF
@@ -116,16 +129,14 @@ contract Tokenizer is ERC721 {
     }
 
     /**
-     * @dev verifies the hash of transcript PDF stored on-chain with PDF hash from the frontend
-     * @param tokenId represents an ID from off-chain database
+     * @dev retrives the boolean value of the key PDF hash from the mapping
      * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
-     * @return True if the input hash matches the on-chain hash, False if not
+     * @return True if the PDF hash is stored on-chain, False otherwise
      */
-    function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) external view returns (bool) {
+    function getStoredHashValue(bytes32 pdfHash) external view returns (bool) {
         if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
-        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
 
-        return pdfHash == s_transcriptHashes[tokenId];
+        return s_storedHashes[pdfHash];
     }
 
     /// @return Number of minted tokens
