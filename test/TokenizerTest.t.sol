@@ -139,7 +139,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
 
     function testStoredHashValueWhenBurned() public {
         vm.startPrank(OWNER);
-        
+
         tokenizer.mint(TOKENID, HASH);
         tokenizer.burn(TOKENID);
 
@@ -177,7 +177,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         vm.expectRevert(Tokenizer__InvalidHash.selector);
         tokenizer.verifyTranscriptHash(TOKENID, 0);
     }
-    
+
     function testInvalidTokenIdVerification() public isOwner {
         tokenizer.mint(TOKENID, HASH);
 
