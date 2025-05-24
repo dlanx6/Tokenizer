@@ -112,7 +112,6 @@ contract Tokenizer is ERC721 {
      * @return True if the input hash matches the on-chain hash, False if not
      */
     function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) external view returns (bool) {
-        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
         if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
         if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted(tokenId);
 
@@ -125,7 +124,6 @@ contract Tokenizer is ERC721 {
      * @return Hash of Transcript PDF
      */
     function getTranscriptHash(uint256 tokenId) external view returns (bytes32) {
-        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
         if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted(tokenId);
 
         return s_transcriptHashes[tokenId];

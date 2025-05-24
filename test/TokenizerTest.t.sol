@@ -37,7 +37,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
     }
 
     function testSenderIsOwner() public {
-        vm.expectRevert(Tokenizer__NotAuthorized.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__NotAuthorized.selector, address(this)));
 
         tokenizer.mint(TOKENID, HASH);
     }
@@ -54,14 +54,14 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         vm.startPrank(OWNER);
 
         tokenizer.mint(TOKENID, HASH);
-        vm.expectRevert(Tokenizer__TokenAlreadyMinted.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenAlreadyMinted.selector, TOKENID, HASH2));
         tokenizer.mint(TOKENID, HASH2);
 
         vm.stopPrank();
     }
 
     function testInvalidTokenId() public isOwner {
-        vm.expectRevert(Tokenizer__InvalidTokenId.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidTokenId.selector, 0));
         tokenizer.mint(0, HASH);
     }
 
@@ -69,14 +69,14 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         vm.startPrank(OWNER);
 
         tokenizer.mint(TOKENID, HASH);
-        vm.expectRevert(Tokenizer__HashAlreadyStored.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__HashAlreadyStored.selector, 100, HASH));
         tokenizer.mint(100, HASH);
 
         vm.stopPrank();
     }
 
     function testInvalidHash() public isOwner {
-        vm.expectRevert(Tokenizer__InvalidHash.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidHash.selector, bytes32(0)));
 
         tokenizer.mint(TOKENID, bytes32(0));
     }
@@ -87,14 +87,14 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         tokenizer.mint(TOKENID, HASH);
         tokenizer.burn(TOKENID);
 
-        vm.expectRevert(Tokenizer__TokenNotMinted.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenNotMinted.selector, TOKENID));
         tokenizer.getTranscriptHash(TOKENID);
 
         vm.stopPrank();
     }
 
     function testTokenBurnedNotMinted() public isOwner {
-        vm.expectRevert(Tokenizer__TokenNotMinted.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenNotMinted.selector, TOKENID));
 
         tokenizer.burn(TOKENID);
     }
@@ -117,7 +117,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
     }
 
     function testGettingNotMintedToken() public {
-        vm.expectRevert(Tokenizer__TokenNotMinted.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenNotMinted.selector, 121));
 
         tokenizer.getTranscriptHash(121);
     }
@@ -151,7 +151,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
     }
 
     function testGetStoredHashValue() public {
-        vm.expectRevert(Tokenizer__InvalidHash.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidHash.selector, 0));
         tokenizer.getStoredHashValue(0);
     }
 
@@ -174,14 +174,14 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
     function testInvalidHashVerification() public isOwner {
         tokenizer.mint(TOKENID, HASH);
 
-        vm.expectRevert(Tokenizer__InvalidHash.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidHash.selector, 0));
         tokenizer.verifyTranscriptHash(TOKENID, 0);
     }
 
     function testInvalidTokenIdVerification() public isOwner {
         tokenizer.mint(TOKENID, HASH);
 
-        vm.expectRevert(Tokenizer__TokenNotMinted.selector);
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenNotMinted.selector, 0));
         tokenizer.verifyTranscriptHash(0, HASH);
     }
 }
