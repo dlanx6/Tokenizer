@@ -4,12 +4,12 @@ pragma solidity ^0.8.19;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 // custom errors instead of strings for gas efficiency
-error Tokenizer__NotAuthorized();
-error Tokenizer__TokenAlreadyMinted();
-error Tokenizer__TokenNotMinted();
-error Tokenizer__InvalidHash();
-error Tokenizer__HashAlreadyStored();
-error Tokenizer__InvalidTokenId();
+error Tokenizer__NotAuthorized(address account);
+error Tokenizer__TokenAlreadyMinted(uint256 tokenId, bytes32 pdfHash);
+error Tokenizer__TokenNotMinted(uint256 tokenId);
+error Tokenizer__InvalidHash(bytes32 pdfHash);
+error Tokenizer__HashAlreadyStored(uint256 tokenId, bytes32 pdfHash);
+error Tokenizer__InvalidTokenId(uint256 tokenId);
 
 /**
  * @title A minter and verifier for PDF with Keccak256 hash
@@ -56,7 +56,7 @@ contract Tokenizer is ERC721 {
 
     /// @dev checks if the sender is the owner
     modifier onlyAuthorized() {
-        if (msg.sender != i_owner) revert Tokenizer__NotAuthorized();
+        if (msg.sender != i_owner) revert Tokenizer__NotAuthorized(msg.sender);
         _;
     }
 
@@ -66,10 +66,10 @@ contract Tokenizer is ERC721 {
      * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
      */
     function mint(uint256 tokenId, bytes32 pdfHash) external onlyAuthorized {
-        if (tokenId == 0) revert Tokenizer__InvalidTokenId();
-        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
-        if (s_storedHashes[pdfHash]) revert Tokenizer__HashAlreadyStored();
-        if (_ownerOf(tokenId) != address(0)) revert Tokenizer__TokenAlreadyMinted();
+        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
+        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
+        if (s_storedHashes[pdfHash]) revert Tokenizer__HashAlreadyStored(tokenId, pdfHash);
+        if (_ownerOf(tokenId) != address(0)) revert Tokenizer__TokenAlreadyMinted(tokenId, pdfHash);
 
         _safeMint(i_owner, tokenId);
 
@@ -88,7 +88,8 @@ contract Tokenizer is ERC721 {
      * @param tokenId represents an ID from off-chain database
      */
     function burn(uint256 tokenId) external onlyAuthorized {
-        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
+        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
+        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted(tokenId);
 
         bytes32 storedHash = s_transcriptHashes[tokenId];
 
@@ -111,8 +112,9 @@ contract Tokenizer is ERC721 {
      * @return True if the input hash matches the on-chain hash, False if not
      */
     function verifyTranscriptHash(uint256 tokenId, bytes32 pdfHash) external view returns (bool) {
-        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
-        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
+        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
+        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
+        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted(tokenId);
 
         return pdfHash == s_transcriptHashes[tokenId];
     }
@@ -123,7 +125,8 @@ contract Tokenizer is ERC721 {
      * @return Hash of Transcript PDF
      */
     function getTranscriptHash(uint256 tokenId) external view returns (bytes32) {
-        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted();
+        if (tokenId == 0) revert Tokenizer__InvalidTokenId(tokenId);
+        if (_ownerOf(tokenId) == address(0)) revert Tokenizer__TokenNotMinted(tokenId);
 
         return s_transcriptHashes[tokenId];
     }
@@ -134,7 +137,7 @@ contract Tokenizer is ERC721 {
      * @return True if the PDF hash is stored on-chain, False otherwise
      */
     function getStoredHashValue(bytes32 pdfHash) external view returns (bool) {
-        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash();
+        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
 
         return s_storedHashes[pdfHash];
     }
