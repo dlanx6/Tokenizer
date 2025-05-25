@@ -38,9 +38,13 @@ contract Tokenizer is ERC721 {
     /// @notice This simply store the tokenId with the hash, used for verification purposes
     mapping(uint256 => bytes32) private s_transcriptHashes;
 
-    /// @dev Stores the fixed-length hash with boolean value
+    /// @dev Stores the PDF hash with boolean value
     /// @notice This determines if the hash is already stored. This prevents duplication when minting.
     mapping(bytes32 => bool) private s_storedHashes;
+
+    /// @dev Stores the PDF hash with the associated token ID
+    /// @notice This determines if the token is already minted. This is for frontend checking.
+    mapping(bytes32 => uint256) private s_mintedTokenIds;
 
     /// @dev immutable, can't be modified once initialized
     address private immutable i_owner;
@@ -75,6 +79,7 @@ contract Tokenizer is ERC721 {
 
         s_transcriptHashes[tokenId] = pdfHash;
         s_storedHashes[pdfHash] = true;
+        s_mintedTokenIds[pdfHash] = tokenId;
 
         unchecked {
             mintedTokenCount++;
@@ -97,6 +102,7 @@ contract Tokenizer is ERC721 {
 
         delete s_transcriptHashes[tokenId];
         delete s_storedHashes[storedHash];
+        delete s_mintedTokenIds[storedHash];
 
         unchecked {
             mintedTokenCount--;
@@ -138,6 +144,17 @@ contract Tokenizer is ERC721 {
         if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
 
         return s_storedHashes[pdfHash];
+    }
+
+    /**
+     * @dev retrives the token ID of the key PDF hash from the mapping
+     * @param pdfHash represents a keccak256 hash generated from the transcript PDF using ethers v6
+     * @return TokenID of the PDF hash
+     */
+    function getTokenIdByHash(bytes32 pdfHash) external view returns (uint256) {
+        if (pdfHash == bytes32(0)) revert Tokenizer__InvalidHash(pdfHash);
+
+        return s_mintedTokenIds[pdfHash];
     }
 
     /// @return Number of minted tokens

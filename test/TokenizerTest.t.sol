@@ -60,9 +60,14 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         vm.stopPrank();
     }
 
-    function testInvalidTokenId() public isOwner {
+    function testMintInvalidTokenId() public isOwner {
         vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidTokenId.selector, 0));
         tokenizer.mint(0, HASH);
+    }
+
+    function testBurnInvalidTokenId() public isOwner {
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidTokenId.selector, 0));
+        tokenizer.burn(0);
     }
 
     function testHashAlreadyStored() public {
@@ -150,7 +155,7 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
         assertFalse(boolValue);
     }
 
-    function testGetStoredHashValue() public {
+    function testGetStoredHashValueError() public {
         vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidHash.selector, 0));
         tokenizer.getStoredHashValue(0);
     }
@@ -183,5 +188,27 @@ contract TokenizerTest is Test, ZkSyncChainChecker {
 
         vm.expectRevert(abi.encodeWithSelector(Tokenizer__TokenNotMinted.selector, 0));
         tokenizer.verifyTranscriptHash(0, HASH);
+    }
+
+    function testGetTokenIdByHash() public isOwner {
+        tokenizer.mint(TOKENID, HASH);
+
+        assertEq(tokenizer.getTokenIdByHash(HASH), TOKENID);
+    }
+
+    function testGetTokenIdByHashError() public {
+        vm.expectRevert(abi.encodeWithSelector(Tokenizer__InvalidHash.selector, bytes32(0)));
+        tokenizer.getTokenIdByHash(0);
+    }
+
+    function testGetBurnedTokenIdByHash() public {
+        vm.startPrank(OWNER);
+
+        tokenizer.mint(TOKENID, HASH);
+        tokenizer.burn(TOKENID);
+
+        vm.stopPrank();
+
+        assertEq(tokenizer.getTokenIdByHash(HASH), 0);
     }
 }
